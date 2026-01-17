@@ -13,22 +13,26 @@
     --nav-text: #B6CEB4;
     --nav-active-bg: #F0F0F0;
     --nav-active-text: #2F3E2E;
+    
+    /* NEW: Status Colors */
+    --status-online: #4CAF50; /* Green */
+    --status-offline: #9E9E9E; /* Grey */
 }
 
 [data-theme="dark"] {
-    /* FOREST OPS (Dark Mode - Palette: #1B211A, #628141, #8BAE66, #EBD5AB) */
-    --bg-color: #1B211A;      /* Darkest Green (Background) */
-    --card-bg: #232B22;       /* Slightly Lighter Dark Green (Cards) */
-    --accent: #628141;        /* Olive Green (Buttons/Borders) */
-    --accent-light: #8BAE66;  /* Sage Green (Highlights/Dim Text) */
-    --text-main: #EBD5AB;     /* Sand/Cream (Main Text) */
-    --text-dim: #8BAE66;      /* Sage Green (Dim Text) */
-    --danger: #FF5555;        /* Emergency Red (High Contrast) */
-    --shadow-color: #0E110D;  /* Deep Shadow */
-    --nav-bg: #151914;        /* Darker Nav Background */
-    --nav-text: #628141;      /* Nav Inactive */
-    --nav-active-bg: #628141; /* Nav Active Background */
-    --nav-active-text: #EBD5AB; /* Nav Active Text */
+    /* FOREST OPS (Dark Mode) */
+    --bg-color: #1B211A;      
+    --card-bg: #232B22;       
+    --accent: #628141;        
+    --accent-light: #8BAE66;  
+    --text-main: #EBD5AB;     
+    --text-dim: #8BAE66;      
+    --danger: #FF5555;        
+    --shadow-color: #0E110D;  
+    --nav-bg: #151914;        
+    --nav-text: #628141;      
+    --nav-active-bg: #628141; 
+    --nav-active-text: #EBD5AB; 
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; transition: background-color 0.3s, color 0.3s; }
@@ -75,18 +79,40 @@ header {
     box-shadow: 3px 3px 0px var(--shadow-color);
 }
 
+/* HEADER ACTIONS & STATUS DOT (NEW) */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    
+    background-color: var(--danger);
+    border: 0.5px solid var(--card-bg);
+    box-shadow: 0 0 0 2px var(--text-dim);
+    transition: all 0.3s ease;
+}
+
+.status-dot.online {
+    background-color: var(--status-online);
+    box-shadow: 0 0 8px var(--status-online);
+    border-color: var(--status-online);
+}
+
 /* Theme Toggle Button */
 .theme-btn {
     background: var(--card-bg);
     border: 2px solid var(--accent);
     color: var(--text-main);
-    font-size: 1.2rem;
+    font-size: 1rem;
     line-height: 1;
     cursor: pointer;
     padding: 4px 10px;
     box-shadow: 2px 2px 0px var(--shadow-color);
     height: fit-content;
-    width: 40px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -173,6 +199,32 @@ button.danger { background: var(--danger); }
 .milestone-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; margin-bottom: 5px; }
 .check-icon { color: var(--accent); font-weight: bold; }
 
+/* NEW: METRICS GRID (BIOMETRICS) */
+.metrics-grid {
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 10px; 
+    margin-bottom: 15px;
+}
+.metric-box {
+    background: var(--bg-color); 
+    padding: 10px; 
+    border: 1px solid var(--accent-light); 
+    text-align: center;
+}
+.metric-label {
+    font-size: 0.65rem; 
+    color: var(--text-dim); 
+    display: block; 
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+.metric-val {
+    font-size: 1.1rem; 
+    color: var(--accent);
+    font-weight: bold;
+}
+
 .chart-box {
     background: var(--bg-color); border: 2px solid var(--accent-light); padding: 10px; height: 220px; margin-bottom: 15px; position: relative;
 }
@@ -190,6 +242,31 @@ textarea {
 .book-title { font-weight: bold; color: var(--text-main); display: block; font-size: 0.9rem; }
 .book-author { font-size: 0.8rem; color: var(--text-dim); font-style: italic; }
 
+/* --- ACCOUNT UI (NEW) --- */
+#account-ui {
+    text-align: center;
+    padding: 10px;
+}
+.account-status-text {
+    font-size: 0.9rem;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.small-text {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 15px;
+    display: block;
+}
+.google-btn {
+    background: #4285F4; border: 2px solid var(--text-main);
+    color: white; font-weight: bold; 
+    display: block; width: 100%;
+}
+
 /* --- BOTTOM NAV --- */
 nav {
     position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
@@ -206,13 +283,13 @@ nav {
 .nav-icon { font-size: 1.2rem; margin-bottom: 2px; filter: grayscale(100%); }
 .nav-btn.active .nav-icon { filter: grayscale(0%); }
 
-/* --- NEW: TACTICAL MODAL SYSTEM --- */
+/* --- TACTICAL MODAL SYSTEM --- */
 .modal-overlay {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center;
     backdrop-filter: blur(2px);
 }
-.modal-box {
+.modal-box, .emergency-card {
     background: var(--card-bg); border: 2px solid var(--accent);
     padding: 20px; width: 85%; max-width: 350px;
     box-shadow: 0 0 25px rgba(0,0,0,0.5);
@@ -220,6 +297,10 @@ nav {
     position: relative;
     animation: slideUp 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
+.emergency-card { border-color: var(--danger); }
+.emergency-title { color: var(--danger); text-align: center; border-bottom: 2px solid var(--danger); padding-bottom: 10px; margin-bottom: 15px; }
+.emergency-content { font-size: 0.8rem; text-align: left; margin-bottom: 20px; }
+
 .modal-box::after { /* Tactical corners */
     content: ''; position: absolute; top: 3px; left: 3px; right: 3px; bottom: 3px;
     border: 1px dashed var(--text-dim); pointer-events: none;
