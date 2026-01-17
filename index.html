@@ -6,15 +6,19 @@
     <title>Protocol 90 Days: Reclaim Manhood</title>
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     
-    <!-- External Library: Chart.js (Wajib untuk Grafik) -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FIREBASE SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
-    <!-- Link ke file CSS eksternal -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- HEADER SECTION -->
+    <!-- HEADER (Tanpa Tombol Logout, dipindah ke About) -->
     <header>
         <div class="header-top">
             <div class="level-info">
@@ -23,11 +27,14 @@
                     <span id="day-display">DAY 1</span>
                 </div>
             </div>
-            <!-- Tombol Ganti Tema -->
-            <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle-btn" title="Switch Mode">☀</button>
+            
+            <div class="header-actions">
+                <!-- Indikator Koneksi -->
+                <div id="connection-status" class="status-dot offline" title="Offline / Local"> </div>
+                <button class="theme-btn" id="theme-toggle-btn" title="Switch Mode">☀</button>
+            </div>
         </div>
         
-        <!-- XP Bar -->
         <div class="progress-container">
             <div class="progress-bar" id="xp-bar"></div>
         </div>
@@ -36,21 +43,20 @@
         </div>
     </header>
 
-    <!-- MAIN CONTENT AREA -->
+    <!-- MAIN CONTENT (Langsung Tampil) -->
     <div id="main-content">
         
-        <!-- TAB 1: MISSIONS (Halaman Utama) -->
+        <!-- TAB 1: MISSIONS -->
         <div id="tab-missions" class="tab-content active">
             <div class="card">
                 <div class="day-header" id="mission-header">QUEST LOG</div>
                 <div style="font-size:0.8rem; margin-bottom:10px; font-style:italic;" id="daily-focus">Focus: Loading...</div>
-                <!-- Task List akan diisi oleh function.js -->
                 <div id="task-list"></div>
             </div>
             
             <div class="card" style="text-align: center;">
                 <p style="font-size:0.75rem; margin-bottom:10px; color:var(--text-dim);">SYSTEM CHECK REQUIRED</p>
-                <button onclick="finishDay()">COMPLETE DAY ►</button>
+                <button id="btn-finish-day">COMPLETE DAY ►</button>
             </div>
         </div>
 
@@ -59,7 +65,7 @@
             <div class="card">
                 <div class="day-header">SAVE POINT</div>
                 <textarea id="journal-input" placeholder="RECORD DATA: Trigger, Win, Fail..."></textarea>
-                <button onclick="saveJournal()">SAVE DATA 💾</button>
+                <button id="btn-save-journal">SAVE DATA 💾</button>
                 <div id="journal-status" style="margin-top:10px; font-size:0.75rem; color:var(--accent); display:none; text-align:center; font-weight:bold;">[ DATA SAVED ]</div>
             </div>
             <div class="card">
@@ -72,23 +78,40 @@
         <div id="tab-stats" class="tab-content">
             <div class="card">
                 <div class="day-header">ATTRIBUTES</div>
-                <div class="stat-row" style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--accent); padding:5px 0;"><span>VIT (Body)</span> <span id="stat-vit" style="font-weight:bold;">0</span></div>
-                <div class="stat-row" style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--accent); padding:5px 0;"><span>MND (Mind)</span> <span id="stat-mind" style="font-weight:bold;">0</span></div>
-                <div class="stat-row" style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--accent); padding:5px 0;"><span>CHA (Social)</span> <span id="stat-soc" style="font-weight:bold;">0</span></div>
+                <div class="stat-row" style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--accent); padding:5px 0;"><span><b>VIT</b> (Body)</span> <span id="stat-vit" style="font-weight:bold;">0</span></div>
+                <div class="stat-row" style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--accent); padding:5px 0;"><span><b>MND</b> (Mind)</span> <span id="stat-mind" style="font-weight:bold;">0</span></div>
+                <div class="stat-row" style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--accent); padding:5px 0;"><span><b>CHA</b> (Social)</span> <span id="stat-soc" style="font-weight:bold;">0</span></div>
             </div>
-            <button class="danger" onclick="resetData()">⚠ FACTORY RESET</button>
+
+            <div class="card">
+                <!-- <div class="day-header">NEURO PLASTICITY</div>
+                <div class="chart-box">
+                    <canvas id="neuroChart"></canvas>
+                </div> -->
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <span class="metric-label">CURRENT STAGE</span>
+                        <strong class="metric-val" id="bio-stage">...</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label">CURRENT XP</span>
+                        <strong class="metric-val" id="bio-xp">...</strong>
+                    </div>
+                </div>
+            </div>
+            <button class="danger" id="btn-reset-data">⚠ FACTORY RESET</button>
         </div>
 
-        <!-- TAB 4: INFO (DASHBOARD & REALTIME METRICS) -->
+        <!-- TAB 4: INFO -->
         <div id="tab-info" class="tab-content">
-            <button class="danger" onclick="toggleEmergency()" style="display: block; margin: 0 auto; width: 95%; margin-bottom:15px">🛡️ RELAPSE PROTOCOL</button>
+            <button class="danger" id="btn-emergency" style="display: block; margin: 0 auto; width: 95%; margin-bottom:15px">🛡️ RELAPSE PROTOCOL</button>
 
             <div class="card">
                 <div class="day-header">TACTICAL DASHBOARD</div>
                 <div class="stage-nav">
-                    <button id="btn-stage-1" class="stage-btn active" onclick="manualSetStage(1)">STAGE 1<br><span style="font-size:0.6rem">DETOX</span></button>
-                    <button id="btn-stage-2" class="stage-btn" onclick="manualSetStage(2)">STAGE 2<br><span style="font-size:0.6rem">REBUILD</span></button>
-                    <button id="btn-stage-3" class="stage-btn" onclick="manualSetStage(3)">STAGE 3<br><span style="font-size:0.6rem">INTEGRATE</span></button>
+                    <button id="btn-stage-1" class="stage-btn active">STAGE 1<br><span style="font-size:0.6rem">DETOX</span></button>
+                    <button id="btn-stage-2" class="stage-btn">STAGE 2<br><span style="font-size:0.6rem">REBUILD</span></button>
+                    <button id="btn-stage-3" class="stage-btn">STAGE 3<br><span style="font-size:0.6rem">INTEGRATE</span></button>
                 </div>
 
                 <div class="stage-detail-box">
@@ -97,89 +120,88 @@
                     <p style="font-size:0.75rem; margin-bottom:10px;" id="stage-desc">Desc...</p>
                 </div>
 
-                <div class="day-header" style="font-size:0.9rem; margin-top:15px;">MILESTONES (WEEKLY)</div>
+                <div class="day-header" style="font-size:0.9rem; margin-top:15px;">MILESTONES</div>
                 <div id="stage-milestones"></div>
             </div>
 
-            
-            
-            <!-- Modal Darurat (Relapse Protocol) -->
-            <div id="emergency-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:200; justify-content:center; align-items:center; padding:20px;">
-                <div class="card" style="width:100%; max-width:400px; border-color:var(--danger);">
-                    <h2 style="color:var(--danger); text-align:center; border-bottom:2px solid var(--danger); padding-bottom:10px;">PROTOCOL DARURAT</h2>
-                    <div style="font-size:0.8rem; margin-top:15px;">
+            <div id="emergency-modal" style="display:none;">
+                <div class="card emergency-card">
+                    <h2 class="emergency-title">PROTOCOL DARURAT</h2>
+                    <div class="emergency-content">
                         <p><strong>JIKA RELAPSE/GAGAL:</strong></p>
-                        <ol style="padding-left:20px; line-height:1.6;">
+                        <ol>
                             <li>JANGAN BENCI DIRI SENDIRI.</li>
                             <li>LAKUKAN 50x PUSH UP SEKARANG.</li>
-                            <li>ANALISA H.A.L.T (Hungry, Angry, Lonely, Tired).</li>
-                            <li>LANJUTKAN MISI BESOK.</li>
+                            <li>ANALISA H.A.L.T.</li>
+                            <li>LANJUTKAN MISI.</li>
                         </ol>
                     </div>
-                    <button class="danger" style="margin-top:20px;" onclick="toggleEmergency()">SAYA MENGERTI</button>
+                    <button class="danger" id="btn-close-emergency">SAYA MENGERTI</button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 5: ABOUT -->
+        <!-- TAB 5: ABOUT & ACCOUNT -->
         <div id="tab-about" class="tab-content">
+            <!-- NEW: ACCOUNT SECTION -->
+            <div class="card">
+                <div class="day-header">ACCOUNT STATUS</div>
+                <div id="account-ui">
+                    <!-- Injected by JS: Guest vs Logged In -->
+                </div>
+            </div>
+
             <div class="card">
                 <div class="day-header">REFERENCE BOOKS</div>
                 <div class="book-ref"><span class="book-title">No More Mr. Nice Guy</span><span class="book-author">Robert Glover</span></div>
                 <div class="book-ref"><span class="book-title">The Rational Male</span><span class="book-author">Rollo Tomassi</span></div>
                 <div class="book-ref"><span class="book-title">Breath</span><span class="book-author">James Nestor</span></div>
                 <div class="book-ref"><span class="book-title">The Way of the Superior Man</span><span class="book-author">David Deida</span></div>
+                <p style="font-size:0.7rem; text-align:center; margin-top:20px; color:var(--text-dim);">"Ego sum dominus meus."</p>
             </div>
             <div class="card">
                 <div class="day-header">SYSTEM INFO</div>
                 <ul class="info-list">
-                    <li><strong>Version:</strong> 1.0</li>
+                    <li><strong>Version:</strong> 1.1</li>
                     <li><strong>Status:</strong> Online</li>
-                    <li><strong>Storage:</strong> LocalStorage</li>
+                    <li><strong>Storage:</strong> <b><span id="storage-status">Checking...</span></b></li>
                 </ul>
-                <p style="font-size:0.7rem; text-align:center; margin-top:20px; color:var(--text-dim);">"Ego sum dominus meus."</p>
             </div>
+            <!-- 
             <div class="card">
-                <div class="day-header">Contact</div>
-                <!-- 
+                <div class="day-header">Contact</div>                
                 <img src="images/me.png" alt="anjardoin" style="display: block; margin: 0 auto; width: 150px; height: 150px;">
-                 -->
+                 
                 <ul class="info-list">
                     <li><strong>Name:</strong> Anjar Ridwan</li>
                     <li><strong>Email:</strong> anjarlearning@gmail.com</li>
                     <li><strong>Telegram:</strong> @insanmakna</li>
-                </ul>
-                <p style="font-size:0.7rem; text-align:center; margin-top:20px; color:var(--text-dim);">"Ego sum dominus meus."</p>
+                </ul>                
             </div>
+            -->
         </div>
-        
 
     </div>
 
-    <!-- GENERIC TACTICAL MODAL (Alert/Confirm Replacement) -->
+    <!-- TACTICAL MODAL -->
     <div id="tactical-modal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-title" id="t-modal-title">ALERT</div>
             <div class="modal-message" id="t-modal-msg">System Message...</div>
-            <div class="modal-actions" id="t-modal-actions">
-                <!-- Button akan diinject via JS -->
-            </div>
+            <div class="modal-actions" id="t-modal-actions"></div>
         </div>
     </div>
 
-    <!-- BOTTOM NAVIGATION -->
     <nav>
-        <button class="nav-btn active" onclick="switchTab('missions')"><span class="nav-icon">⚔️</span>QUESTS</button>
-        <button class="nav-btn" onclick="switchTab('journal')"><span class="nav-icon">📝</span>LOGS</button>
-        <button class="nav-btn" onclick="switchTab('stats')"><span class="nav-icon">📊</span>STATS</button>
-        <button class="nav-btn" onclick="switchTab('info')"><span class="nav-icon">ℹ️</span>INFO</button>
-        <button class="nav-btn" onclick="switchTab('about')"><span class="nav-icon">⚙️</span>ABOUT</button>
+        <button class="nav-btn active" data-tab="missions"><span class="nav-icon">⚔️</span>QUESTS</button>
+        <button class="nav-btn" data-tab="journal"><span class="nav-icon">📝</span>LOGS</button>
+        <button class="nav-btn" data-tab="stats"><span class="nav-icon">📊</span>STATS</button>
+        <button class="nav-btn" data-tab="info"><span class="nav-icon">ℹ️</span>INFO</button>
+        <button class="nav-btn" data-tab="about"><span class="nav-icon">⚙️</span>ABOUT</button>
     </nav>
 
-    <!-- LOAD JAVASCRIPT LOGIC -->
+    <!-- LOAD DATA FIRST, THEN SCRIPT (NON-MODULE) -->
     <script src="data.js"></script>
     <script src="script.js"></script>
-
-   
 </body>
 </html>
