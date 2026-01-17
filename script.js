@@ -119,9 +119,31 @@ function saveData() {
 
 function resetData() {
     showTacticalModal("FACTORY RESET", "WIPE ALL DATA (LOCAL & CLOUD)?", "confirm", () => {
+        // Reset player state to default
         player = { ...defaultState };
-        saveData();
-        location.reload();
+        
+        // 1. Reset Local Storage
+        saveData(); // This saves the reset 'player' object to local storage
+
+        // 2. Reset Cloud Data (If logged in)
+        if (isCloudMode && currentUser && db) {
+            // Option A: Set cloud data to defaultState (Overwrite) - SAFER
+            db.collection('users').doc(currentUser.uid).set(player)
+                .then(() => {
+                    console.log("Cloud data reset successfully.");
+                    location.reload();
+                })
+                .catch((error) => {
+                    console.error("Error resetting cloud data: ", error);
+                    showTacticalModal("ERROR", "Failed to reset cloud data.", "alert");
+                });
+                
+            // Option B: Delete the document entirely (User starts fresh next login)
+            // db.collection('users').doc(currentUser.uid).delete().then(...)
+        } else {
+            // Only local reset needed
+            location.reload();
+        }
     });
 }
 
