@@ -3,275 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Protocol 90 Days</title>
-    <!-- Chart.js for Visualizations -->
+    <title>Protocol 90 Days: Reclaim Manhood</title>
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    
+    <!-- External Library: Chart.js (Wajib untuk Grafik) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* --- THEME VARIABLES --- */
-        :root {
-            /* DEFAULT: RETRO SAGE (Light Mode) */
-            --bg-color: #F0F0F0;
-            --card-bg: #D9E9CF;
-            --accent: #96A78D;
-            --accent-light: #B6CEB4;
-            --text-main: #2F3E2E;
-            --text-dim: #6A7A68;
-            --danger: #D65D5D;
-            --shadow-color: #788772;
-            --nav-bg: #2F3E2E;
-            --nav-text: #B6CEB4;
-            --nav-active-bg: #F0F0F0;
-            --nav-active-text: #2F3E2E;
-        }
-
-        [data-theme="dark"] {
-            /* NIGHT OPS (Dark Mode) */
-            --bg-color: #050505;
-            --card-bg: #111111;
-            --accent: #8B0000;       /* Tactical Red */
-            --accent-light: #330000; /* Dark Red */
-            --text-main: #E0E0E0;    /* Off White */
-            --text-dim: #888888;
-            --danger: #FF3333;
-            --shadow-color: #220000;
-            --nav-bg: #1A1A1A;
-            --nav-text: #666666;
-            --nav-active-bg: #8B0000;
-            --nav-active-text: #FFFFFF;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; transition: background-color 0.3s, color 0.3s; }
-        
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* --- HEADER (MODIFIED FOR ALIGNMENT) --- */
-        header {
-            padding: 15px 0;
-            background: var(--bg-color);
-            border-bottom: 4px solid var(--accent);
-            flex-shrink: 0;
-            width: 90%;
-            max-width: 600px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        /* Container Flexbox untuk mensejajarkan Badge & Tombol */
-        .header-top { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; /* Kunci agar sejajar vertikal di tengah */
-            margin-bottom: 5px;
-        }
-
-        .level-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .level-badge {
-            font-size: 0.8rem;
-            color: var(--text-main);
-            letter-spacing: 1px;
-            display: inline-block;
-            font-weight: bold;
-            background: var(--accent-light);
-            padding: 4px 8px;
-            border: 2px solid var(--accent);
-            box-shadow: 3px 3px 0px var(--shadow-color);
-        }
-
-        /* Theme Toggle Button Style */
-        .theme-btn {
-            background: var(--card-bg);
-            border: 2px solid var(--accent);
-            color: var(--text-main);
-            font-size: 1.2rem;
-            line-height: 1;
-            cursor: pointer;
-            padding: 4px 10px;
-            box-shadow: 2px 2px 0px var(--shadow-color);
-            height: fit-content;
-            width: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .theme-btn:active {
-            transform: translate(1px, 1px);
-            box-shadow: 1px 1px 0px var(--shadow-color);
-        }
-
-        .progress-container {
-            width: 100%;
-            height: 10px;
-            background: var(--text-dim);
-            border: 2px solid var(--text-main);
-            margin-top: 5px;
-            position: relative;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: var(--accent);
-            width: 0%;
-            transition: width 0.3s steps(10);
-        }
-
-        /* --- CONTENT AREA --- */
-        #main-content {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 15px 0;
-            padding-bottom: 100px;
-            width: 90%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        #main-content::-webkit-scrollbar { width: 6px; }
-        #main-content::-webkit-scrollbar-track { background: var(--bg-color); }
-        #main-content::-webkit-scrollbar-thumb { background: var(--accent); border: 1px solid var(--text-main); }
-
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- CARDS & TASKS --- */
-        .card {
-            background: var(--card-bg);
-            border: 3px solid var(--accent);
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 5px 5px 0px var(--shadow-color);
-            position: relative;
-        }
-
-        .card::before {
-            content: ''; position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px;
-            border: 1px dashed var(--accent-light); pointer-events: none;
-        }
-
-        .day-header {
-            font-size: 1.1rem;
-            border-bottom: 3px double var(--accent);
-            padding-bottom: 8px;
-            margin-bottom: 15px;
-            color: var(--text-main);
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .task-item {
-            display: flex; align-items: center; margin-bottom: 10px; padding: 10px;
-            background: var(--bg-color); border: 2px solid var(--accent-light);
-            cursor: pointer; transition: all 0.1s; position: relative; z-index: 1;
-        }
-
-        .task-item:active { transform: translate(2px, 2px); }
-        .task-item.completed { opacity: 0.7; background: var(--accent-light); border-color: var(--accent); }
-        .task-item.completed span { text-decoration: line-through; }
-
-        .checkbox {
-            width: 20px; height: 20px; border: 2px solid var(--text-main); margin-right: 12px;
-            display: flex; justify-content: center; align-items: center; background: #fff;
-        }
-        
-        .task-item.completed .checkbox { background: var(--accent); }
-        .checkbox::after { content: ''; width: 8px; height: 8px; background: var(--text-main); display: none; }
-        .task-item.completed .checkbox::after { display: block; }
-
-        .xp-tag { font-size: 0.65rem; color: var(--bg-color); background: var(--text-main); padding: 2px 5px; margin-left: auto; font-weight: bold; }
-
-        /* --- BUTTONS --- */
-        button {
-            background: var(--accent); color: #fff; border: 2px solid var(--text-main); padding: 12px;
-            font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase;
-            box-shadow: 4px 4px 0px var(--text-main); transition: all 0.1s; font-size: 0.9rem;
-        }
-        button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--text-main); }
-        button.danger { background: var(--danger); }
-
-        /* --- INFO DASHBOARD STYLES (NEW) --- */
-        .stage-nav { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .stage-btn { 
-            padding: 8px 4px; font-size: 0.7rem; background: var(--bg-color); 
-            color: var(--text-main); border: 2px solid var(--accent); box-shadow: none; 
-            opacity: 0.7; height: auto;
-        }
-        .stage-btn.active { opacity: 1; background: var(--accent); color: #fff; border-color: var(--text-main); box-shadow: 2px 2px 0px var(--shadow-color); }
-        
-        .stage-detail-box { background: var(--bg-color); border: 1px solid var(--accent); padding: 10px; margin-bottom: 10px; }
-        .stage-task-row { 
-            display: flex; flex-direction: column; gap: 5px; padding: 8px; 
-            border-bottom: 1px dashed var(--accent-light); font-size: 0.75rem; margin-bottom: 5px;
-        }
-        .milestone-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; margin-bottom: 5px; }
-        .check-icon { color: var(--accent); font-weight: bold; }
-
-        /* --- CHART CONTAINER --- */
-        .chart-box {
-            background: var(--bg-color); border: 2px solid var(--accent-light); padding: 10px; height: 220px; margin-bottom: 15px; position: relative;
-        }
-
-        /* --- JOURNAL & LISTS --- */
-        textarea {
-            width: 100%; height: 150px; background: var(--bg-color); border: 2px solid var(--accent);
-            color: var(--text-main); padding: 10px; font-size: 0.9rem; resize: none; margin-bottom: 10px; outline: none;
-            box-shadow: inset 3px 3px 0px rgba(0,0,0,0.1);
-        }
-
-        .info-list li { margin-bottom: 8px; font-size: 0.85rem; padding-left: 15px; position: relative; list-style: none; }
-        .info-list li::before { content: '>'; position: absolute; left: 0; color: var(--accent); font-weight: bold; }
-        
-        .book-ref { border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 10px; }
-        .book-title { font-weight: bold; color: var(--text-main); display: block; font-size: 0.9rem; }
-        .book-author { font-size: 0.8rem; color: var(--text-dim); font-style: italic; }
-
-        /* --- BOTTOM NAV --- */
-        nav {
-            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
-            width: 95%; max-width: 600px;
-            background: var(--nav-bg); display: flex; height: 60px;
-            border-radius: 8px; padding: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 100;
-        }
-
-        .nav-btn {
-            flex: 1; background: transparent; border: none; color: var(--nav-text);
-            font-size: 0.6rem; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; border-radius: 4px; box-shadow: none; padding: 0;
-        }
-
-        .nav-btn.active { color: var(--nav-active-text); background: var(--nav-active-bg); }
-        .nav-icon { font-size: 1.2rem; margin-bottom: 2px; filter: grayscale(100%); }
-        .nav-btn.active .nav-icon { filter: grayscale(0%); }
-
-    </style>
+    
+    <!-- Link ke file CSS eksternal -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- HEADER SECTION -->
     <header>
-        <!-- Header Top: Flex container untuk sejajarkan Badge dan Tombol -->
         <div class="header-top">
             <div class="level-info">
                 <span class="level-badge" id="level-display">LV.1 RECRUIT</span>
-                <div style="font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top: 16px;">
+                <div style="font-size:0.75rem; color:var(--text-dim); font-weight:bold; margin-top: 14px;">
                     <span id="day-display">DAY 1</span>
                 </div>
             </div>
-            <!-- Tombol Theme Sejajar Horizontal dengan Level Badge -->
+            <!-- Tombol Ganti Tema -->
             <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle-btn" title="Switch Mode">☀</button>
         </div>
         
+        <!-- XP Bar -->
         <div class="progress-container">
             <div class="progress-bar" id="xp-bar"></div>
         </div>
@@ -280,12 +36,15 @@
         </div>
     </header>
 
+    <!-- MAIN CONTENT AREA -->
     <div id="main-content">
         
-        <!-- TAB 1: MISSIONS -->
+        <!-- TAB 1: MISSIONS (Halaman Utama) -->
         <div id="tab-missions" class="tab-content active">
             <div class="card">
                 <div class="day-header" id="mission-header">QUEST LOG</div>
+                <div style="font-size:0.8rem; margin-bottom:10px; font-style:italic;" id="daily-focus">Focus: Loading...</div>
+                <!-- Task List akan diisi oleh function.js -->
                 <div id="task-list"></div>
             </div>
             
@@ -320,15 +79,16 @@
             <button class="danger" onclick="resetData()">⚠ FACTORY RESET</button>
         </div>
 
-        <!-- TAB 4: INFO (DASHBOARD INTEGRATED) -->
+        <!-- TAB 4: INFO (DASHBOARD & REALTIME METRICS) -->
         <div id="tab-info" class="tab-content">
-            <!-- Stage Navigator -->
+            <button class="danger" onclick="toggleEmergency()" style="display: block; margin: 0 auto; width: 95%; margin-bottom:15px">🛡️ RELAPSE PROTOCOL</button>
+
             <div class="card">
                 <div class="day-header">TACTICAL DASHBOARD</div>
                 <div class="stage-nav">
-                    <button id="btn-stage-1" class="stage-btn active" onclick="setStage(1)">STAGE 1<br><span style="font-size:0.6rem">DETOX</span></button>
-                    <button id="btn-stage-2" class="stage-btn" onclick="setStage(2)">STAGE 2<br><span style="font-size:0.6rem">REBUILD</span></button>
-                    <button id="btn-stage-3" class="stage-btn" onclick="setStage(3)">STAGE 3<br><span style="font-size:0.6rem">INTEGRATE</span></button>
+                    <button id="btn-stage-1" class="stage-btn active" onclick="manualSetStage(1)">STAGE 1<br><span style="font-size:0.6rem">DETOX</span></button>
+                    <button id="btn-stage-2" class="stage-btn" onclick="manualSetStage(2)">STAGE 2<br><span style="font-size:0.6rem">REBUILD</span></button>
+                    <button id="btn-stage-3" class="stage-btn" onclick="manualSetStage(3)">STAGE 3<br><span style="font-size:0.6rem">INTEGRATE</span></button>
                 </div>
 
                 <div class="stage-detail-box">
@@ -337,36 +97,13 @@
                     <p style="font-size:0.75rem; margin-bottom:10px;" id="stage-desc">Desc...</p>
                 </div>
 
-                <div class="day-header" style="font-size:0.9rem; margin-top:15px;">STAGE TASKS</div>
-                <div id="stage-tasks"></div>
-
-                <div class="day-header" style="font-size:0.9rem; margin-top:15px;">MILESTONES</div>
+                <div class="day-header" style="font-size:0.9rem; margin-top:15px;">MILESTONES (WEEKLY)</div>
                 <div id="stage-milestones"></div>
             </div>
 
-            <!-- Analytics Charts -->
-            <div class="card">
-                <div class="day-header">BIOMETRICS</div>
-                
-                <p style="font-size:0.7rem; text-align:center; font-weight:bold; margin-bottom:5px;">NEUROCHEMISTRY</p>
-                <div class="chart-box">
-                    <canvas id="neuroChart"></canvas>
-                </div>
-                
-                <p style="font-size:0.7rem; text-align:center; font-weight:bold; margin-bottom:5px; margin-top:15px;">ATTRIBUTES RADAR</p>
-                <div class="chart-box">
-                    <canvas id="radarChart"></canvas>
-                </div>
-
-                <p style="font-size:0.7rem; text-align:center; font-weight:bold; margin-bottom:5px; margin-top:15px;">FOCUS ALLOCATION</p>
-                <div class="chart-box" style="height:200px">
-                    <canvas id="focusChart"></canvas>
-                </div>
-            </div>
-
-            <button class="danger" onclick="toggleEmergency()">🛡️ RELAPSE PROTOCOL</button>
             
-            <!-- Emergency Modal -->
+            
+            <!-- Modal Darurat (Relapse Protocol) -->
             <div id="emergency-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:200; justify-content:center; align-items:center; padding:20px;">
                 <div class="card" style="width:100%; max-width:400px; border-color:var(--danger);">
                     <h2 style="color:var(--danger); text-align:center; border-bottom:2px solid var(--danger); padding-bottom:10px;">PROTOCOL DARURAT</h2>
@@ -375,8 +112,8 @@
                         <ol style="padding-left:20px; line-height:1.6;">
                             <li>JANGAN BENCI DIRI SENDIRI.</li>
                             <li>LAKUKAN 50x PUSH UP SEKARANG.</li>
-                            <li>ANALISA H.A.L.T.</li>
-                            <li>LANJUTKAN MISI DARI SINI.</li>
+                            <li>ANALISA H.A.L.T (Hungry, Angry, Lonely, Tired).</li>
+                            <li>LANJUTKAN MISI BESOK.</li>
                         </ol>
                     </div>
                     <button class="danger" style="margin-top:20px;" onclick="toggleEmergency()">SAYA MENGERTI</button>
@@ -387,324 +124,62 @@
         <!-- TAB 5: ABOUT -->
         <div id="tab-about" class="tab-content">
             <div class="card">
-                <div class="day-header">CORE LIBRARY</div>
-                <div class="book-ref"><span class="book-title">No More Mr. Nice Guy</span></div>
-                <div class="book-ref"><span class="book-title">The Rational Male</span></div>
-                <div class="book-ref"><span class="book-title">Breath</span></div>
+                <div class="day-header">REFERENCE BOOKS</div>
+                <div class="book-ref"><span class="book-title">No More Mr. Nice Guy</span><span class="book-author">Robert Glover</span></div>
+                <div class="book-ref"><span class="book-title">The Rational Male</span><span class="book-author">Rollo Tomassi</span></div>
+                <div class="book-ref"><span class="book-title">Breath</span><span class="book-author">James Nestor</span></div>
+                <div class="book-ref"><span class="book-title">The Way of the Superior Man</span><span class="book-author">David Deida</span></div>
             </div>
             <div class="card">
                 <div class="day-header">SYSTEM INFO</div>
                 <ul class="info-list">
                     <li><strong>Version:</strong> 1.0</li>
-                    <li><strong>Architect:</strong> Anjar</li>
+                    <li><strong>Status:</strong> Online</li>
                     <li><strong>Storage:</strong> LocalStorage</li>
-                    <li><strong>Theme:</strong> Retro Sage / Night Ops</li>
+                </ul>
+                <p style="font-size:0.7rem; text-align:center; margin-top:20px; color:var(--text-dim);">"Ego sum dominus meus."</p>
+            </div>
+            <div class="card">
+                <div class="day-header">Contact</div>
+                <!-- 
+                <img src="images/me.png" alt="anjardoin" style="display: block; margin: 0 auto; width: 150px; height: 150px;">
+                 -->
+                <ul class="info-list">
+                    <li><strong>Name:</strong> Anjar Ridwan</li>
+                    <li><strong>Email:</strong> anjarlearning@gmail.com</li>
+                    <li><strong>Telegram:</strong> @insanmakna</li>
                 </ul>
                 <p style="font-size:0.7rem; text-align:center; margin-top:20px; color:var(--text-dim);">"Ego sum dominus meus."</p>
             </div>
         </div>
+        
 
     </div>
 
-    <!-- BOTTOM NAVIGATION (5 Items) -->
+    <!-- GENERIC TACTICAL MODAL (Alert/Confirm Replacement) -->
+    <div id="tactical-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title" id="t-modal-title">ALERT</div>
+            <div class="modal-message" id="t-modal-msg">System Message...</div>
+            <div class="modal-actions" id="t-modal-actions">
+                <!-- Button akan diinject via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
     <nav>
-        <button class="nav-btn active" onclick="switchTab('missions')">
-            <span class="nav-icon">⚔️</span>QUESTS
-        </button>
-        <button class="nav-btn" onclick="switchTab('journal')">
-            <span class="nav-icon">📝</span>LOGS
-        </button>
-        <button class="nav-btn" onclick="switchTab('stats')">
-            <span class="nav-icon">📊</span>STATS
-        </button>
-        <button class="nav-btn" onclick="switchTab('info')">
-            <span class="nav-icon">ℹ️</span>INFO
-        </button>
-        <button class="nav-btn" onclick="switchTab('about')">
-            <span class="nav-icon">⚙️</span>ABOUT
-        </button>
+        <button class="nav-btn active" onclick="switchTab('missions')"><span class="nav-icon">⚔️</span>QUESTS</button>
+        <button class="nav-btn" onclick="switchTab('journal')"><span class="nav-icon">📝</span>LOGS</button>
+        <button class="nav-btn" onclick="switchTab('stats')"><span class="nav-icon">📊</span>STATS</button>
+        <button class="nav-btn" onclick="switchTab('info')"><span class="nav-icon">ℹ️</span>INFO</button>
+        <button class="nav-btn" onclick="switchTab('about')"><span class="nav-icon">⚙️</span>ABOUT</button>
     </nav>
 
-    <script>
-        // --- DATA DASHBOARD (Info Tab) ---
-        const protocolData = {
-            1: {
-                title: "THE DETOX & RESET",
-                subtitle: "Internal Focus (Hari 1-30)",
-                theme: '"Stop the bleeding." Menenangkan sistem saraf parasimpatis.',
-                desc: "Fokus 100% ke dalam diri. Jangan menambah skill sosial sebelum 'hardware' fisik diperbaiki.",
-                milestones: ["Tidur pulas tanpa mulut terbuka", "Dorongan PMO terkontrol", "Rahang rileks"],
-                focusSplit: [90, 10], 
-                schedule: [
-                    { range: "Hari 1-7", physio: "Mouth Taping", psych: "Inventory of Approval", mission: "Ghost Walk" },
-                    { range: "Hari 8-14", physio: "SCM Massage", psych: "Covert Contracts", mission: "Space Taking" },
-                    { range: "Hari 15-30", physio: "Diaphragm", psych: "Father Wound", mission: "Eye Contact Lvl 1" }
-                ]
-            },
-            2: {
-                title: "THE REBUILD",
-                subtitle: "Capacity Building (Hari 31-60)",
-                theme: '"Build the Engine." Membangun volume suara & batasan.',
-                desc: "Latihan napas berat (CO2 tolerance) untuk ketenangan di bawah tekanan.",
-                milestones: ["Suara lebih berat", "Nyaman bilang 'Tidak'", "Tenang saat stres"],
-                focusSplit: [50, 50],
-                schedule: [
-                    { range: "Hari 31-44", physio: "Chest Humming", psych: "Rational Detachment", mission: "The Small 'No'" },
-                    { range: "Hari 45-60", physio: "CO2 Box Breathing", psych: "Boundaries", mission: "Silence Mastery" }
-                ]
-            },
-            3: {
-                title: "THE INTEGRATION",
-                subtitle: "Social Testing (Hari 61-90)",
-                theme: '"Enter the Arena." Menguji frame di dunia nyata.',
-                desc: "Teknik fisik dan mental yang dibangun sekarang diuji terhadap dinamika sosial nyata.",
-                milestones: ["Respon hormat orang asing", "Stop minta maaf", "Kendali emosi penuh"],
-                focusSplit: [20, 80],
-                schedule: [
-                    { range: "Hari 61-75", physio: "Projection", psych: "Amused Mastery", mission: "High-Resonance Hello" },
-                    { range: "Hari 76-90", physio: "Tummo Breathing", psych: "Radical Honesty", mission: "Lead Interaction" }
-                ]
-            }
-        };
+    <!-- LOAD JAVASCRIPT LOGIC -->
+    <script src="data.js"></script>>
+    <script src="script.js"></script>>
 
-        const missionDB = {
-            1: [
-                { id: "d1_1", text: "Mouth Taping (Sleep)", xp: 100, type: "vit" },
-                { id: "d1_2", text: "NoFap Streak", xp: 150, type: "vit" },
-                { id: "d1_3", text: "Journal: Approval Seeking", xp: 100, type: "mind" },
-                { id: "d1_4", text: "Ghost Walk (No HP)", xp: 200, type: "soc" }
-            ],
-            2: [
-                { id: "d2_1", text: "SCM Massage (Neck)", xp: 100, type: "vit" },
-                { id: "d2_2", text: "Journal: Covert Contracts", xp: 150, type: "mind" },
-                { id: "d2_3", text: "Nasal Breathing Only", xp: 100, type: "vit" }
-            ],
-            3: [
-                { id: "d3_1", text: "Space Taking (Sit Wide)", xp: 150, type: "soc" },
-                { id: "d3_2", text: "Cold Shower (30s)", xp: 200, type: "vit" },
-                { id: "d3_3", text: "Read: NMMNG Ch.2", xp: 100, type: "mind" }
-            ]
-        };
-
-        // --- STATE MANAGEMENT ---
-        let player = {
-            level: 1, xp: 0, xpNeeded: 500, day: 1,
-            stats: { vit: 0, mind: 0, soc: 0 },
-            completedTasks: [], journal: {}, theme: 'light'
-        };
-
-        let chartsInitialized = false;
-        let charts = {};
-
-        function init() {
-            loadData();
-            applyTheme(player.theme);
-            renderUI();
-        }
-
-        function saveData() {
-            localStorage.setItem("protocol_save_v2", JSON.stringify(player));
-            renderUI();
-        }
-
-        function loadData() {
-            const saved = localStorage.getItem("protocol_save_v2");
-            if (saved) player = JSON.parse(saved);
-        }
-
-        // --- THEME LOGIC ---
-        function toggleTheme() {
-            player.theme = player.theme === 'light' ? 'dark' : 'light';
-            applyTheme(player.theme);
-            saveData();
-        }
-
-        function applyTheme(theme) {
-            const btn = document.getElementById('theme-toggle-btn');
-            
-            if (theme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                btn.innerHTML = "☾"; // Moon icon for Dark Mode
-            } else {
-                document.documentElement.removeAttribute('data-theme');
-                btn.innerHTML = "☀"; // Sun icon for Light Mode
-            }
-
-            if (chartsInitialized) updateChartColors();
-        }
-
-        // --- DASHBOARD LOGIC ---
-        function setStage(stageId) {
-            const data = protocolData[stageId];
-            
-            // Buttons
-            document.querySelectorAll('.stage-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-stage-${stageId}`).classList.add('active');
-
-            // Content
-            document.getElementById('stage-title').innerText = data.title;
-            document.getElementById('stage-theme').innerText = data.theme;
-            document.getElementById('stage-desc').innerText = data.desc;
-
-            // Tasks
-            const tasksContainer = document.getElementById('stage-tasks');
-            tasksContainer.innerHTML = '';
-            data.schedule.forEach(item => {
-                tasksContainer.innerHTML += `
-                    <div class="stage-task-row">
-                        <div style="font-weight:bold; color:var(--accent);">[ ${item.range} ]</div>
-                        <div>PHYSIO: ${item.physio}</div>
-                        <div>PSYCH: ${item.psych}</div>
-                        <div>MISSION: ${item.mission}</div>
-                    </div>`;
-            });
-
-            // Milestones
-            const msContainer = document.getElementById('stage-milestones');
-            msContainer.innerHTML = '';
-            data.milestones.forEach(ms => {
-                msContainer.innerHTML += `<div class="milestone-item"><span class="check-icon">✓</span> ${ms}</div>`;
-            });
-
-            // Update Focus Chart if exists
-            if(charts.focus) {
-                charts.focus.data.datasets[0].data = data.focusSplit;
-                charts.focus.update();
-            }
-        }
-
-        function toggleEmergency() {
-            const modal = document.getElementById('emergency-modal');
-            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-        }
-
-        // --- GAME LOGIC ---
-        function toggleTask(taskId, xp, type) {
-            if (player.completedTasks.includes(taskId)) return;
-            player.completedTasks.push(taskId);
-            player.xp += xp;
-            player.stats[type]++;
-            if (player.xp >= player.xpNeeded) {
-                player.xp -= player.xpNeeded; player.level++;
-                player.xpNeeded = Math.floor(player.xpNeeded * 1.2);
-                alert("LEVEL UP!");
-            }
-            saveData();
-        }
-
-        function finishDay() {
-            if (confirm("End Day " + player.day + " and advance?")) {
-                player.day++; player.completedTasks = []; saveData(); window.scrollTo(0,0);
-            }
-        }
-
-        function saveJournal() {
-            const text = document.getElementById('journal-input').value;
-            if (!text) return;
-            player.journal[new Date().toLocaleDateString()] = text;
-            saveData();
-            document.getElementById('journal-status').style.display = 'block';
-            setTimeout(() => document.getElementById('journal-status').style.display = 'none', 2000);
-            document.getElementById('journal-input').value = "";
-        }
-
-        function resetData() {
-            if (confirm("WARNING: This will wipe all progress. Confirm?")) {
-                localStorage.removeItem("protocol_save_v2"); location.reload();
-            }
-        }
-
-        // --- UI RENDERING ---
-        function renderUI() {
-            document.getElementById('level-display').innerText = "LV." + player.level + " RECRUIT";
-            document.getElementById('xp-text').innerText = `${player.xp} / ${player.xpNeeded} XP`;
-            document.getElementById('day-display').innerText = "DAY " + player.day;
-            document.getElementById('xp-bar').style.width = (player.xp / player.xpNeeded * 100) + "%";
-            document.getElementById('stat-vit').innerText = player.stats.vit;
-            document.getElementById('stat-mind').innerText = player.stats.mind;
-            document.getElementById('stat-soc').innerText = player.stats.soc;
-
-            const list = document.getElementById('task-list'); list.innerHTML = "";
-            const missions = missionDB[player.day] || [{id:0, text:"Rest Day / No Data", xp:0}];
-            missions.forEach(m => {
-                const isDone = player.completedTasks.includes(m.id);
-                list.innerHTML += `<div class="task-item ${isDone ? 'completed' : ''}" onclick="toggleTask('${m.id}', ${m.xp}, '${m.type}')"><div class="checkbox"></div><span style="flex-grow:1; font-size:0.85rem;">${m.text}</span><span class="xp-tag">+${m.xp}XP</span></div>`;
-            });
-
-            const history = document.getElementById('journal-history'); history.innerHTML = "";
-            Object.keys(player.journal).reverse().forEach(date => {
-                history.innerHTML += `<div style="margin-bottom:10px; border-bottom:1px dashed var(--accent); padding-bottom:5px;"><strong style="color:var(--text-main)">> ${date}</strong><br>${player.journal[date]}</div>`;
-            });
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-
-            if (tabId === 'info' && !chartsInitialized) {
-                setTimeout(initCharts, 100);
-                chartsInitialized = true;
-            }
-        }
-
-        // --- CHARTS ---
-        function initCharts() {
-            const textColor = getComputedStyle(document.body).getPropertyValue('--text-main');
-            const accentColor = getComputedStyle(document.body).getPropertyValue('--accent');
-            const fontConfig = { family: 'Courier New', size: 10 };
-
-            // Neuro
-            const ctxNeuro = document.getElementById('neuroChart').getContext('2d');
-            charts.neuro = new Chart(ctxNeuro, {
-                type: 'line',
-                data: {
-                    labels: ['D1', 'D15', 'D30', 'D45', 'D60', 'D75', 'D90'],
-                    datasets: [
-                        { label: 'Craving', data: [100, 80, 40, 30, 20, 15, 10], borderColor: '#D65D5D', borderWidth: 2, pointRadius: 0 },
-                        { label: 'Confidence', data: [20, 25, 35, 55, 70, 85, 95], borderColor: accentColor, backgroundColor: accentColor + '33', fill: true, borderWidth: 2 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: fontConfig } } }, scales: { x: { ticks: { color: textColor } }, y: { display: false } } }
-            });
-
-            // Radar
-            const ctxRadar = document.getElementById('radarChart').getContext('2d');
-            charts.radar = new Chart(ctxRadar, {
-                type: 'radar',
-                data: {
-                    labels: ['Voice', 'Boundaries', 'Eye', 'Nerves', 'Social'],
-                    datasets: [
-                        { label: 'Goal', data: [90, 95, 90, 95, 85], borderColor: accentColor, backgroundColor: accentColor + '55', borderWidth: 2 },
-                        { label: 'Start', data: [20, 30, 20, 10, 10], borderColor: '#888', borderDash: [5,5], pointRadius: 0 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: fontConfig } } }, scales: { r: { ticks: { display: false }, grid: { color: '#888' }, pointLabels: { color: textColor, font: fontConfig } } } }
-            });
-
-            // Focus
-            const ctxFocus = document.getElementById('focusChart').getContext('2d');
-            charts.focus = new Chart(ctxFocus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Internal', 'External'],
-                    datasets: [{ data: [90, 10], backgroundColor: [textColor, accentColor], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: textColor, font: fontConfig } } } }
-            });
-
-            setStage(1);
-        }
-
-        function updateChartColors() {
-            if(charts.neuro) charts.neuro.destroy();
-            if(charts.radar) charts.radar.destroy();
-            if(charts.focus) charts.focus.destroy();
-            initCharts();
-        }
-
-        init();
-    </script>
+   
 </body>
 </html>
