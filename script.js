@@ -1,3 +1,6 @@
+// ============================================================
+// 1. KONFIGURASI FIREBASE (Digabung disini)
+// ============================================================
 const firebaseConfig = {
     apiKey: "AIzaSyBdMPEZymzoBoh9SsL2Ih0k8E1cq3a0mJk",
     authDomain: "reclaim-protocol-101.firebaseapp.com",
@@ -19,16 +22,20 @@ if (typeof firebase !== 'undefined') {
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         } else {
-            firebase.app(); // Gunakan instance yang ada
+            firebase.app();
         }
         auth = firebase.auth();
         db = firebase.firestore();
-        console.log("Firebase SDK loaded.");
-    } catch (e) { console.error("Firebase Init Error:", e); }
+        console.log("Firebase initialized.");
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+    }
+} else {
+    console.error("Firebase SDK not loaded!");
 }
 
 // ============================================================
-// STATE MANAGEMENT
+// 2. STATE MANAGEMENT
 // ============================================================
 const defaultState = {
     level: 1, xp: 0, xpNeeded: 500, day: 1,
@@ -42,28 +49,22 @@ let charts = {};
 let pendingModalAction = null;
 
 // ============================================================
-// INITIALIZATION
+// 3. INITIALIZATION
 // ============================================================
 function init() {
     console.log("System Initializing...");
     
-    // 1. Load LocalStorage (Guest Mode) agar UI langsung muncul
     loadLocalData(); 
-    
-    // 2. Setup Event Listeners
     setupEventListeners();
 
-    // 3. Cek Koneksi Firebase
     if (auth) {
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // LOGIN
                 currentUser = user;
                 isCloudMode = true;
                 updateConnectionStatus("online");
                 loadCloudData(user.uid);
             } else {
-                // LOGOUT
                 currentUser = null;
                 isCloudMode = false;
                 updateConnectionStatus("offline");
@@ -78,7 +79,7 @@ function init() {
 }
 
 // ============================================================
-// DATA HANDLING
+// 4. DATA HANDLING
 // ============================================================
 
 function loadLocalData() {
@@ -86,7 +87,6 @@ function loadLocalData() {
         const saved = localStorage.getItem("protocol_v3");
         if (saved) {
             player = JSON.parse(saved);
-            console.log("Loaded from LocalStorage.");
         } else {
             player = { ...defaultState };
         }
@@ -102,64 +102,61 @@ function loadCloudData(uid) {
     if (!db) return;
     const userRef = db.collection('users').doc(uid);
     
-    // Matikan listener lama jika ada
-    if (unsubscribeDoc) unsubscribeDoc();
+    if (unsubscribeDoc) unsubscribeDoc(); 
 
     unsubscribeDoc = userRef.onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
             player = { ...defaultState, ...data };
             applyTheme(player.theme);
-            renderUI(); 
+            renderUI();
             
             if (document.getElementById('tab-info') && document.getElementById('tab-info').classList.contains('active')) {
                 updateChartColors();
             }
-            console.log("Synced from Cloud.");
         } else {
-            console.log("New cloud user. Uploading local progress...");
             userRef.set(player);
         }
+    }, (error) => {
+        console.error("Firestore Error:", error);
     });
 }
 
 function saveData() {
-    // 1. Simpan ke LocalStorage
     localStorage.setItem("protocol_v3", JSON.stringify(player));
-
-    // 2. Simpan ke Cloud (Jika Login)
     if (isCloudMode && currentUser && db) {
-        // Overwrite dokumen user dengan data player terbaru
-        db.collection('users').doc(currentUser.uid).set(player)
-            .catch(e => console.error("Cloud Save Error:", e));
+        db.collection('users').doc(currentUser.uid).update(player).catch(e => {
+            if (e.code === 'not-found') {
+                db.collection('users').doc(currentUser.uid).set(player);
+            }
+        });
     }
 }
 
 function resetData() {
     showTacticalModal("FACTORY RESET", "WIPE ALL DATA (LOCAL & CLOUD)?", "confirm", () => {
         player = { ...defaultState };
-        saveData(); 
-        location.reload();
+        localStorage.setItem("protocol_v3", JSON.stringify(player));
+        if (isCloudMode && currentUser && db) {
+            db.collection('users').doc(currentUser.uid).set(player).then(() => {
+                location.reload();
+            });
+        } else {
+            location.reload();
+        }
     });
 }
 
-// --- FUNGSI BARU: HAPUS LOG ---
-// Ditempel ke window agar bisa dipanggil via onclick="deleteLog('...')"
 window.deleteLog = function(key) {
     showTacticalModal("DELETE LOG", "PERMANENTLY REMOVE THIS ENTRY?", "confirm", () => {
-        // Hapus dari objek player di memori
         delete player.journal[key];
-        
-        // Simpan perubahan ke Local & Cloud
         saveData();
-        
-        // Render ulang UI
         renderUI();
     });
 }
 
 // ============================================================
-// UI UPDATES
+// 5. UI UPDATES
 // ============================================================
 
 function updateConnectionStatus(status) {
@@ -194,7 +191,7 @@ function renderAccountUI() {
     } else {
         container.innerHTML = `
             <span class="account-status-text" style="color:var(--text-dim)">GUEST MODE (LOCAL)</span>
-            <p class="small-text">Data disimpan di browser ini. Login untuk sync antar device.</p>
+            <p class="small-text">Data disimpan di browser. Login untuk sync.</p>
             <button class="google-btn" id="btn-login-google">[o] SYNC WITH GOOGLE</button>
         `;
         document.getElementById('btn-login-google').onclick = loginWithGoogle;
@@ -202,16 +199,19 @@ function renderAccountUI() {
 }
 
 // ============================================================
-// AUTH ACTIONS
+// 6. AUTH ACTIONS
 // ============================================================
 
 function loginWithGoogle() {
-    if (!auth) return alert("Firebase not configured! Check script.js");
+    if (!auth) return alert("Firebase not ready.");
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch(e => {
+        console.error("Login Fail:", e);
         let msg = e.message;
         if (e.code === 'auth/unauthorized-domain') {
-            msg = "Domain ini belum diizinkan di Firebase Console > Authentication > Settings.";
+            msg = "Domain ini belum diizinkan di Firebase Console > Authentication > Settings > Authorized Domains.";
+        } else if (e.code === 'auth/popup-closed-by-user') {
+            return;
         }
         showTacticalModal("LOGIN FAILED", msg, "alert");
     });
@@ -224,7 +224,7 @@ function logout() {
 }
 
 // ============================================================
-// GAMEPLAY LOGIC
+// 7. GAMEPLAY LOGIC
 // ============================================================
 
 function toggleTask(id, xp, type) {
@@ -258,30 +258,28 @@ function finishDay() {
     });
 }
 
-// Menggunakan Timestamp (Date.now()) untuk Multiple Logs
 function saveJournal() {
     const input = document.getElementById('journal-input');
     if (!input.value) return;
     
-    const uniqueId = Date.now(); // ID Unik berdasarkan waktu
+    const uniqueId = Date.now(); 
     player.journal[uniqueId] = input.value;
     
     const status = document.getElementById('journal-status');
     status.style.display = 'block';
     setTimeout(() => status.style.display = 'none', 2000);
     input.value = "";
-    
     saveData();
     renderUI();
 }
 
 // ============================================================
-// RENDERING HELPERS
+// 8. RENDERING HELPERS
 // ============================================================
 
 function getDayData(dayNum) {
     if (typeof protocolData === 'undefined') {
-        console.error("protocolData is missing! Make sure data.js is loaded.");
+        console.error("Error: protocolData is missing");
         return {}; 
     }
     for (const stage of protocolData) {
@@ -306,7 +304,6 @@ function getRankName(level) {
 }
 
 function renderUI() {
-    // Header Info
     const lvlDisplay = document.getElementById('level-display');
     if(lvlDisplay) lvlDisplay.innerText = `LV.${player.level} ${getRankName(player.level)}`;
     
@@ -314,12 +311,10 @@ function renderUI() {
     document.getElementById('xp-text').innerText = `${player.xp} / ${player.xpNeeded} XP`;
     document.getElementById('xp-bar').style.width = (player.xp / player.xpNeeded * 100) + "%";
 
-    // Stats
     document.getElementById('stat-vit').innerText = player.stats.vit;
     document.getElementById('stat-mind').innerText = player.stats.mind;
     document.getElementById('stat-soc').innerText = player.stats.soc;
 
-    // Biometrics Info
     const stgIdx = Math.ceil(player.day / 30) || 1;
     const bioStage = document.getElementById('bio-stage');
     if(bioStage) bioStage.innerText = `STAGE ${stgIdx > 3 ? 3 : stgIdx}`;
@@ -327,21 +322,17 @@ function renderUI() {
     const bioXp = document.getElementById('bio-xp');
     if(bioXp) bioXp.innerText = player.xp + " XP";
 
-    // Missions
     const currentData = getDayData(player.day);
     if(currentData.focus) {
         document.getElementById('mission-header').innerText = `LOG: DAY ${player.day}`;
         document.getElementById('daily-focus').innerText = `FOCUS: ${currentData.focus.toUpperCase()}`;
-    
         const list = document.getElementById('task-list');
         list.innerHTML = "";
-        
         const tasks = [
             { id: `d${player.day}_morn`, text: `PHYSIO: ${currentData.morning}`, xp: 100, type: 'vit' },
             { id: `d${player.day}_ment`, text: `PSYCH: ${currentData.mental}`, xp: 150, type: 'mind' },
             { id: `d${player.day}_miss`, text: `MISSION: ${currentData.mission}`, xp: 200, type: 'soc' }
         ];
-    
         tasks.forEach(t => {
             const isDone = player.completedTasks.includes(t.id);
             const div = document.createElement('div');
@@ -352,29 +343,28 @@ function renderUI() {
         });
     }
 
-    // Journal Rendering (Sorting & Formatting)
+    // [UPDATED] Journal Rendering with SVG Trash Icon
     const hist = document.getElementById('journal-history');
     hist.innerHTML = "";
-    
-    // Sort keys: Timestamp terbesar (terbaru) di atas
     const sortedKeys = Object.keys(player.journal).sort((a, b) => {
-        if (!isNaN(a) && !isNaN(b)) return b - a; // Angka (Timestamp)
-        return b.localeCompare(a); // String (Fallback)
+        if (!isNaN(a) && !isNaN(b)) return b - a; 
+        return b.localeCompare(a); 
     });
+
+    // SVG Trash Icon Code
+    const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
 
     sortedKeys.forEach(key => {
         let displayDate = key;
-        // Cek apakah key adalah timestamp
         if (!isNaN(key) && key.length > 8) { 
             displayDate = new Date(parseInt(key)).toLocaleString(); 
         } 
         
-        // Tambahkan tombol Hapus [DELETE]
         hist.innerHTML += `
         <div class="journal-item">
             <div class="journal-header">
                 <span class="journal-date">> ${displayDate}</span>
-                <button class="btn-delete-log" onclick="deleteLog('${key}')">DELETE</button>
+                <button class="btn-delete-log" onclick="deleteLog('${key}')" title="Delete Log">${trashIcon}</button>
             </div>
             <div class="journal-content">${player.journal[key]}</div>
         </div>`;
@@ -382,7 +372,7 @@ function renderUI() {
 }
 
 // ============================================================
-// EVENT LISTENERS
+// 9. EVENT LISTENERS
 // ============================================================
 
 function setupEventListeners() {
@@ -416,7 +406,7 @@ function setupEventListeners() {
 }
 
 // ============================================================
-// HELPERS (Tabs, Theme, Charts)
+// 10. HELPERS (Tabs, Theme, Charts)
 // ============================================================
 
 function switchTab(tabId) {
@@ -436,7 +426,7 @@ function switchTab(tabId) {
             } else {
                 updateChartColors();
             }
-        }, 100); 
+        }, 100);
         
         const currentStageIdx = Math.ceil(player.day / 30);
         setStageUI(currentStageIdx > 3 ? 3 : (currentStageIdx || 1));
@@ -499,11 +489,9 @@ function showTacticalModal(title, msg, type = "alert", confirmCallback = null) {
     } else {
         const btnNo = document.createElement('button');
         btnNo.className = "danger"; btnNo.innerText = "ABORT"; btnNo.onclick = closeTacticalModal;
-        
         const btnYes = document.createElement('button');
         btnYes.innerText = "CONFIRM";
         btnYes.onclick = () => { confirmCallback(); closeTacticalModal(); };
-        
         actions.appendChild(btnNo); actions.appendChild(btnYes);
     }
     modal.style.display = 'flex';
@@ -514,7 +502,7 @@ function initCharts() {
     const ctxN = document.getElementById('neuroChart');
     const ctxR = document.getElementById('radarChart');
 
-    if (!ctxN || !ctxR) return;
+    if (!ctxN || !ctxR) return; 
 
     const textColor = getComputedStyle(document.body).getPropertyValue('--text-main').trim();
     const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
