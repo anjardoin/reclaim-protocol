@@ -1,4 +1,3 @@
-// --- FIREBASE CONFIG ---
 const firebaseConfig = {
     apiKey: "AIzaSyBdMPEZymzoBoh9SsL2Ih0k8E1cq3a0mJk",
     authDomain: "reclaim-protocol-101.firebaseapp.com",
@@ -6,7 +5,7 @@ const firebaseConfig = {
     storageBucket: "reclaim-protocol-101.firebasestorage.app",
     messagingSenderId: "130134213935",
     appId: "1:130134213935:web:2d6a42bcc93d020e350dda"
-  };
+};
 
 // Initialize Vars
 let auth, db;
@@ -17,14 +16,20 @@ let isCloudMode = false;
 // Cek Firebase SDK
 if (typeof firebase !== 'undefined') {
     try {
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        } else {
+            firebase.app(); // Gunakan instance yang ada
+        }
         auth = firebase.auth();
         db = firebase.firestore();
         console.log("Firebase SDK loaded.");
     } catch (e) { console.error("Firebase Init Error:", e); }
 }
 
-// --- STATE MANAGEMENT ---
+// ============================================================
+// STATE MANAGEMENT
+// ============================================================
 const defaultState = {
     level: 1, xp: 0, xpNeeded: 500, day: 1,
     stats: { vit: 0, mind: 0, soc: 0 },
@@ -36,7 +41,9 @@ let chartsInitialized = false;
 let charts = {};
 let pendingModalAction = null;
 
-// --- INITIALIZATION ---
+// ============================================================
+// INITIALIZATION
+// ============================================================
 function init() {
     console.log("System Initializing...");
     
@@ -50,11 +57,13 @@ function init() {
     if (auth) {
         auth.onAuthStateChanged((user) => {
             if (user) {
+                // LOGIN
                 currentUser = user;
                 isCloudMode = true;
                 updateConnectionStatus("online");
                 loadCloudData(user.uid);
             } else {
+                // LOGOUT
                 currentUser = null;
                 isCloudMode = false;
                 updateConnectionStatus("offline");
@@ -68,7 +77,10 @@ function init() {
     }
 }
 
-// --- DATA HANDLING ---
+// ============================================================
+// DATA HANDLING
+// ============================================================
+
 function loadLocalData() {
     try {
         const saved = localStorage.getItem("protocol_v3");
@@ -89,15 +101,18 @@ function loadLocalData() {
 function loadCloudData(uid) {
     if (!db) return;
     const userRef = db.collection('users').doc(uid);
+    
+    // Matikan listener lama jika ada
+    if (unsubscribeDoc) unsubscribeDoc();
+
     unsubscribeDoc = userRef.onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
             player = { ...defaultState, ...data };
             applyTheme(player.theme);
-            renderUI(); // Render ulang UI dengan data baru
+            renderUI(); 
             
-            // Jika sedang di tab info, update chart juga
-            if (document.getElementById('tab-info').classList.contains('active')) {
+            if (document.getElementById('tab-info') && document.getElementById('tab-info').classList.contains('active')) {
                 updateChartColors();
             }
             console.log("Synced from Cloud.");
@@ -109,45 +124,44 @@ function loadCloudData(uid) {
 }
 
 function saveData() {
+    // 1. Simpan ke LocalStorage
     localStorage.setItem("protocol_v3", JSON.stringify(player));
+
+    // 2. Simpan ke Cloud (Jika Login)
     if (isCloudMode && currentUser && db) {
-        db.collection('users').doc(currentUser.uid).update(player).catch(e => {
-            db.collection('users').doc(currentUser.uid).set(player);
-        });
+        // Overwrite dokumen user dengan data player terbaru
+        db.collection('users').doc(currentUser.uid).set(player)
+            .catch(e => console.error("Cloud Save Error:", e));
     }
 }
 
 function resetData() {
     showTacticalModal("FACTORY RESET", "WIPE ALL DATA (LOCAL & CLOUD)?", "confirm", () => {
-        // Reset player state to default
         player = { ...defaultState };
-        
-        // 1. Reset Local Storage
-        saveData(); // This saves the reset 'player' object to local storage
-
-        // 2. Reset Cloud Data (If logged in)
-        if (isCloudMode && currentUser && db) {
-            // Option A: Set cloud data to defaultState (Overwrite) - SAFER
-            db.collection('users').doc(currentUser.uid).set(player)
-                .then(() => {
-                    console.log("Cloud data reset successfully.");
-                    location.reload();
-                })
-                .catch((error) => {
-                    console.error("Error resetting cloud data: ", error);
-                    showTacticalModal("ERROR", "Failed to reset cloud data.", "alert");
-                });
-                
-            // Option B: Delete the document entirely (User starts fresh next login)
-            // db.collection('users').doc(currentUser.uid).delete().then(...)
-        } else {
-            // Only local reset needed
-            location.reload();
-        }
+        saveData(); 
+        location.reload();
     });
 }
 
-// --- UI UPDATES ---
+// --- FUNGSI BARU: HAPUS LOG ---
+// Ditempel ke window agar bisa dipanggil via onclick="deleteLog('...')"
+window.deleteLog = function(key) {
+    showTacticalModal("DELETE LOG", "PERMANENTLY REMOVE THIS ENTRY?", "confirm", () => {
+        // Hapus dari objek player di memori
+        delete player.journal[key];
+        
+        // Simpan perubahan ke Local & Cloud
+        saveData();
+        
+        // Render ulang UI
+        renderUI();
+    });
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+
 function updateConnectionStatus(status) {
     const el = document.getElementById('connection-status');
     const txt = document.getElementById('storage-status');
@@ -187,11 +201,20 @@ function renderAccountUI() {
     }
 }
 
-// --- AUTH ACTIONS ---
+// ============================================================
+// AUTH ACTIONS
+// ============================================================
+
 function loginWithGoogle() {
-    if (!auth) return alert("Firebase not configured! Check function.js");
+    if (!auth) return alert("Firebase not configured! Check script.js");
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(e => showTacticalModal("LOGIN ERROR", e.message, "alert"));
+    auth.signInWithPopup(provider).catch(e => {
+        let msg = e.message;
+        if (e.code === 'auth/unauthorized-domain') {
+            msg = "Domain ini belum diizinkan di Firebase Console > Authentication > Settings.";
+        }
+        showTacticalModal("LOGIN FAILED", msg, "alert");
+    });
 }
 
 function logout() {
@@ -200,7 +223,10 @@ function logout() {
     });
 }
 
-// --- GAMEPLAY LOGIC ---
+// ============================================================
+// GAMEPLAY LOGIC
+// ============================================================
+
 function toggleTask(id, xp, type) {
     if (player.completedTasks.includes(id)) return;
     player.completedTasks.push(id);
@@ -232,24 +258,30 @@ function finishDay() {
     });
 }
 
+// Menggunakan Timestamp (Date.now()) untuk Multiple Logs
 function saveJournal() {
     const input = document.getElementById('journal-input');
     if (!input.value) return;
-    player.journal[new Date().toLocaleDateString()] = input.value;
+    
+    const uniqueId = Date.now(); // ID Unik berdasarkan waktu
+    player.journal[uniqueId] = input.value;
     
     const status = document.getElementById('journal-status');
     status.style.display = 'block';
     setTimeout(() => status.style.display = 'none', 2000);
     input.value = "";
+    
     saveData();
     renderUI();
 }
 
-// --- RENDERING HELPERS ---
+// ============================================================
+// RENDERING HELPERS
+// ============================================================
+
 function getDayData(dayNum) {
-    // Pastikan protocolData loaded
     if (typeof protocolData === 'undefined') {
-        console.error("protocolData is missing! Make sure data.js is loaded before script.js");
+        console.error("protocolData is missing! Make sure data.js is loaded.");
         return {}; 
     }
     for (const stage of protocolData) {
@@ -274,6 +306,7 @@ function getRankName(level) {
 }
 
 function renderUI() {
+    // Header Info
     const lvlDisplay = document.getElementById('level-display');
     if(lvlDisplay) lvlDisplay.innerText = `LV.${player.level} ${getRankName(player.level)}`;
     
@@ -281,10 +314,12 @@ function renderUI() {
     document.getElementById('xp-text').innerText = `${player.xp} / ${player.xpNeeded} XP`;
     document.getElementById('xp-bar').style.width = (player.xp / player.xpNeeded * 100) + "%";
 
+    // Stats
     document.getElementById('stat-vit').innerText = player.stats.vit;
     document.getElementById('stat-mind').innerText = player.stats.mind;
     document.getElementById('stat-soc').innerText = player.stats.soc;
 
+    // Biometrics Info
     const stgIdx = Math.ceil(player.day / 30) || 1;
     const bioStage = document.getElementById('bio-stage');
     if(bioStage) bioStage.innerText = `STAGE ${stgIdx > 3 ? 3 : stgIdx}`;
@@ -292,6 +327,7 @@ function renderUI() {
     const bioXp = document.getElementById('bio-xp');
     if(bioXp) bioXp.innerText = player.xp + " XP";
 
+    // Missions
     const currentData = getDayData(player.day);
     if(currentData.focus) {
         document.getElementById('mission-header').innerText = `LOG: DAY ${player.day}`;
@@ -316,14 +352,39 @@ function renderUI() {
         });
     }
 
+    // Journal Rendering (Sorting & Formatting)
     const hist = document.getElementById('journal-history');
     hist.innerHTML = "";
-    Object.keys(player.journal).reverse().forEach(date => {
-        hist.innerHTML += `<div style="margin-bottom:10px; border-bottom:1px dashed var(--accent); padding-bottom:5px;"><strong style="color:var(--text-main)">> ${date}</strong><br>${player.journal[date]}</div>`;
+    
+    // Sort keys: Timestamp terbesar (terbaru) di atas
+    const sortedKeys = Object.keys(player.journal).sort((a, b) => {
+        if (!isNaN(a) && !isNaN(b)) return b - a; // Angka (Timestamp)
+        return b.localeCompare(a); // String (Fallback)
+    });
+
+    sortedKeys.forEach(key => {
+        let displayDate = key;
+        // Cek apakah key adalah timestamp
+        if (!isNaN(key) && key.length > 8) { 
+            displayDate = new Date(parseInt(key)).toLocaleString(); 
+        } 
+        
+        // Tambahkan tombol Hapus [DELETE]
+        hist.innerHTML += `
+        <div class="journal-item">
+            <div class="journal-header">
+                <span class="journal-date">> ${displayDate}</span>
+                <button class="btn-delete-log" onclick="deleteLog('${key}')">DELETE</button>
+            </div>
+            <div class="journal-content">${player.journal[key]}</div>
+        </div>`;
     });
 }
 
-// --- EVENT LISTENERS ---
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+
 function setupEventListeners() {
     const navBtns = document.querySelectorAll('.nav-btn');
     navBtns.forEach(btn => {
@@ -354,7 +415,10 @@ function setupEventListeners() {
     if(btnCloseEmerg) btnCloseEmerg.onclick = () => document.getElementById('emergency-modal').style.display = 'none';
 }
 
-// --- HELPERS (Tabs, Theme, Charts) ---
+// ============================================================
+// HELPERS (Tabs, Theme, Charts)
+// ============================================================
+
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     const targetTab = document.getElementById('tab-' + tabId);
@@ -364,17 +428,15 @@ function switchTab(tabId) {
     const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
     if(activeBtn) activeBtn.classList.add('active');
     
-    // INISIALISASI CHART HANYA JIKA TAB INFO DIBUKA
     if (tabId === 'info') {
         setTimeout(() => {
-            // Cek apakah chart canvas visible dan belum init
             if (!chartsInitialized) {
                 initCharts();
                 chartsInitialized = true;
             } else {
                 updateChartColors();
             }
-        }, 100); // Delay kecil agar DOM rendering selesai
+        }, 100); 
         
         const currentStageIdx = Math.ceil(player.day / 30);
         setStageUI(currentStageIdx > 3 ? 3 : (currentStageIdx || 1));
@@ -446,30 +508,22 @@ function showTacticalModal(title, msg, type = "alert", confirmCallback = null) {
     }
     modal.style.display = 'flex';
 }
-
 function closeTacticalModal() { document.getElementById('tactical-modal').style.display = 'none'; }
 
-// --- CHART GENERATION (FIXED) ---
 function initCharts() {
     const ctxN = document.getElementById('neuroChart');
     const ctxR = document.getElementById('radarChart');
 
-    // Cek apakah elemen ada sebelum mencoba membuat chart
-    if (!ctxN || !ctxR) {
-        console.warn("Chart elements not found yet.");
-        return;
-    }
+    if (!ctxN || !ctxR) return;
 
     const textColor = getComputedStyle(document.body).getPropertyValue('--text-main').trim();
     const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
     const fontConfig = { family: 'Courier New', size: 10 };
     
-    // Data Radar dinamis berdasarkan stats
     const maxStat = 90;
     const norm = (v) => Math.min(100, Math.round((v/maxStat)*100));
     const radarData = [norm(player.stats.vit), norm(player.stats.mind), norm(player.stats.soc), norm(player.stats.vit), norm(player.stats.soc)];
 
-    // 1. NEURO CHART
     charts.neuro = new Chart(ctxN.getContext('2d'), {
         type: 'line',
         data: {
@@ -487,7 +541,6 @@ function initCharts() {
         }
     });
 
-    // 2. RADAR CHART
     charts.radar = new Chart(ctxR.getContext('2d'), {
         type: 'radar',
         data: {
@@ -496,8 +549,8 @@ function initCharts() {
                 label: 'Current', 
                 data: radarData, 
                 borderColor: accentColor, 
-                backgroundColor: accentColor+'33',
-                pointBackgroundColor: accentColor
+                backgroundColor: accentColor+'33', 
+                pointBackgroundColor: accentColor 
             }]
         },
         options: { 
@@ -521,7 +574,7 @@ function updateChartColors() {
     initCharts();
 }
 
-// --- START APPLICATION ---
+// --- START APP ---
 document.addEventListener('DOMContentLoaded', () => {
     init();
 });
