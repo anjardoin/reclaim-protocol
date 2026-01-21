@@ -340,9 +340,10 @@ nav {
 
 /* Tombol Hapus: Ikon Sampah Merah Minimalis */
 .btn-delete-log {
-    background: transparent;
+    background: var(--danger);
+    width: 30px;
     border: none;
-    color: var(--danger);
+    color: var(--nav-active-bg);
     padding: 4px;
     cursor: pointer;
     opacity: 0.5;
@@ -364,6 +365,24 @@ nav {
     width: 14px;
     height: 14px;
     stroke-width: 2.5;
+}
+
+/* --- JOURNAL CONTENT FORMATTING --- */
+.journal-content {
+    font-size: 0.85rem;
+    color: var(--text-main);
+    line-height: 1.5;
+    
+    /* INI KUNCINYA: Menjaga format baris baru dan spasi */
+    white-space: pre-wrap; 
+    word-wrap: break-word; /* Mencegah kata panjang merusak layout */
+    
+    /* Opsional: Memberi sedikit style kutipan */
+    background: rgba(0,0,0,0.03);
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 5px;
+    border-left: 2px solid var(--accent-light);
 }
 
 @keyframes slideUp { from { transform: translateY(20px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
